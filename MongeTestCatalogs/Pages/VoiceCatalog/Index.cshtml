@@ -1,0 +1,237 @@
+﻿@page
+@model MongeTestCatalogs.Pages.VoiceCatalog.IndexModel
+<h2>@Model.Title</h2>
+<h3>@Model.Message</h3>
+<br />
+@{
+	if (!@Model.Message.Trim().Equals(""))
+	{
+		<h4>Type: <span>@Model.Type</span></h4>
+		<h4>Brand <span>@Model.Brand</span></h4>
+	}
+}
+<br />
+
+<h4 style="color: red;" id="error_result"></h4>
+
+<form method="post">
+
+	<input type="button" class="btn btn-primary" id="SpeakButton" onclick="SpeakButton_Click();"
+		   style="font-size:35px; width: 200px;" value="Speak" />
+
+	<input type="button"  class="btn btn-default" id="StopButton" onclick="StopButton_Click();"
+		   style="font-size:35px; width: 200px;" value="Stop" />
+</form>
+
+<br />
+<h2 id="ResultText"></h2>
+<br />
+
+<div id="ResultContent">
+	<table class="table">
+		<thead style="font-size:25px;" >
+			<tr>
+				<th>
+					@Html.DisplayNameFor(model => model.Product[0].Title)
+				</th>
+				<th>
+					@Html.DisplayNameFor(model => model.Product[0].ReleaseDate)
+				</th>
+				<th>
+					@Html.DisplayNameFor(model => model.Product[0].Genre)
+				</th>
+				<th>
+					@Html.DisplayNameFor(model => model.Product[0].Price)
+				</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody style="font-size:20px;">
+			@foreach (var item in Model.Product)
+			{
+				<tr>
+					<td>
+						@Html.DisplayFor(modelItem => item.Title)
+					</td>
+					<td>
+						@Html.DisplayFor(modelItem => item.ReleaseDate)
+					</td>
+					<td>
+						@Html.DisplayFor(modelItem => item.Genre)
+					</td>
+					<td>
+						@Html.DisplayFor(modelItem => item.Price)
+					</td>
+					<td>
+						<a asp-page="../Products/Details" asp-route-id="@item.ID">Details</a> |
+					</td>
+				</tr>
+			}
+		</tbody>
+	</table>
+</div>
+
+<script>
+	var r = document.getElementById("ResultText");
+	var speechRecognizer = new webkitSpeechRecognition();
+	var startBtn = document.getElementById("SpeakButton");
+	var request = "";
+
+	function SpeakButton_Click() {
+		r.innerHTML = "Starting...";
+		if ('webkitSpeechRecognition' in window) {
+			r.innerHTML = "Starting Voice Recognition";
+			//var speechRecognizer = new webkitSpeechRecognition();
+			speechRecognizer.continuous = true;
+			speechRecognizer.interimResults = true;
+			speechRecognizer.lang = 'es-ES';
+			speechRecognizer.start();
+			var finalTranscripts = '';
+			speechRecognizer.onresult = function (event) {
+				var interimTranscripts = '';
+				for (var i = event.resultIndex; i < event.results.length; i++) {
+					var transcript = event.results[i][0].transcript;
+					transcript.replace("\n", "<br/>");
+					if (event.results[i].isFinal) {
+						finalTranscripts += transcript;
+					} else {
+						interimTranscripts += transcript;
+					}
+					r.innerHTML = finalTranscripts + '<span style="color:#999">' + interimTranscripts + '</span>';
+					request = finalTranscripts + interimTranscripts;
+				}
+			}
+			speechRecognizer.onerror = function (event) {
+
+			}
+			speechRecognizer.onstart = function () {
+				startBtn.style.visibility = "hidden";
+			}
+			speechRecognizer.onend = function () {
+				startBtn.style.visibility = "visible";
+				LUIS_Request(request);
+			}
+		} else {
+			r.innerHTML = " Your Browser doesn't support webitSpeechRecognition! ";
+			console.log(" Your Browser doesn't support webitSpeechRecognition! ");
+		}
+	}
+
+	function StopButton_Click() {
+		if ('webkitSpeechRecognition' in window) {
+			speechRecognizer.stop();
+		} else {
+			r.innerHTML = " Your Browser doesn't support webitSpeechRecognition! ";
+			console.log(" Your Browser doesn't support webitSpeechRecognition! ");
+		}
+	}
+
+
+</script>
+
+
+<script>
+	function LUIS_Request(request) {
+		//request = "quiero%20ver%20los%20sofas";
+		var params = {
+			// These are optional request parameters. They are set to their default values.
+			//"timezoneOffset": "0",
+			//"verbose": "false",
+			//"spellCheck": "false",
+			//"staging": "false",
+		};
+
+		$.ajax({
+			url: "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/b0a9eb4e-2381-4de5-9778-e6e0b8b5b6fc?q=" + request + $.param(params),
+			beforeSend: function (xhrObj) {
+				// Request headers
+				xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", "API_KEY");
+			},
+			type: "GET",
+			// The request body may be empty for a GET request
+			data: "{body}",
+		})
+			.done(function (data) {
+				// Display a popup containing the top intent
+				//alert("Detected the following intent: " + data.topScoringIntent.intent);
+				console.log(data);
+
+				if (data.entities.length <= 0) {
+					$("#ResultContent").html('<h4 style="color: red;">No content found for your reuqest, try again</h4>');
+				} else {
+					voiceRecognitionResult( data.entities[0].entity );
+				}
+			})
+			.fail(function () {
+				alert("error");
+				$("#error_result").html("Your Voice Recognition is not Correct, Try Again");
+			});
+	};
+</script>
+
+<script>
+
+	function voiceRecognitionResult(_type) {
+		console.log("Ajax Test");
+		$.ajax({
+			url: '@Url.Action("GetProducts", "VoiceCatalog")',
+			type: "GET",
+			//data: { type: "Microondas" },
+			data: { handler: 'VoiceCatalog', type: _type },
+			//contentType: "application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("XSRF-TOKEN",
+					$('input:hidden[name="__RequestVerificationToken"]').val());
+			},
+			//dataType: "json"
+		}).done(function (data) {
+			document.open();
+			document.write(data);
+			document.close();
+		});
+	}
+
+	function ajaxTest() {
+		console.log("Ajax Test");
+		$.ajax({
+			url: '@Url.Action("GetProducts", "VoiceCatalog")',
+			type: "GET",
+			//data: { type: "Microondas" },
+			data: { handler: 'VoiceCatalog', type: "Microondas" },
+			//contentType: "application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("XSRF-TOKEN",
+					$('input:hidden[name="__RequestVerificationToken"]').val());
+			},
+			//dataType: "json"
+		}).done(function (data) {
+			document.open();
+			document.write(data);
+			document.close();
+		});
+	}
+
+	function ajaxTest2() {
+		console.log("Ajax Test 2");
+		$.ajax({
+			url: '@Url.Action("GetProducts")',
+			type: "POST",
+			//data: { type: "microondas" },
+			contentType: "application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("XSRF-TOKEN",
+					$('input:hidden[name="__RequestVerificationToken"]').val());
+			},
+			dataType: "json",
+			success: function (data) {
+				//console.log('AJAX 1 SUCCESS ', data);
+			},
+			error: function (xhr, status, errorThrown) {
+				var err = "Status: " + status + " " + errorThrown;
+				console.log('AJAX 2 ERROR ', err);
+			}
+		}).done(function (data) {
+			console.log('AJAX 2 DONE ', data);
+		});
+	}
+</script>

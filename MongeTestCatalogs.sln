@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2027
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MongeTestCatalogs", "MongeTestCatalogs\MongeTestCatalogs.csproj", "{5A937A99-25CA-4398-B705-61B3CB6E89ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A937A99-25CA-4398-B705-61B3CB6E89ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5A937A99-25CA-4398-B705-61B3CB6E89ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5A937A99-25CA-4398-B705-61B3CB6E89ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5A937A99-25CA-4398-B705-61B3CB6E89ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A90A270F-BA92-48B0-AC57-330FAD43D26A}
+	EndGlobalSection
+EndGlobal
