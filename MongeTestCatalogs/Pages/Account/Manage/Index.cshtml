@@ -1,45 +1,385 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Profile";
+	ViewData["Title"] = "Profile";
 }
 
-<h4>@ViewData["Title"]</h4>
+<h4>@ViewData["Title"] </h4>
 @Html.Partial("_StatusMessage", Model.StatusMessage)
 <div class="row">
-    <div class="col-md-6">
-        <form method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Username"></label>
-                <input asp-for="Username" class="form-control" disabled />
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.Email"></label>
-                @if (Model.IsEmailConfirmed)
-                {
-                    <div class="input-group">
-                        <input asp-for="Input.Email" class="form-control" />
-                        <span class="input-group-addon" aria-hidden="true"><span class="glyphicon glyphicon-ok text-success"></span></span>
-                    </div>
-                }
-                else
-                {
-                    <input asp-for="Input.Email" class="form-control" />
-                    <button asp-page-handler="SendVerificationEmail" class="btn btn-link">Send verification email</button>
-                }
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.PhoneNumber"></label>
-                <input asp-for="Input.PhoneNumber" class="form-control" />
-                <span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-default">Save</button>
-        </form>
-    </div>
+	<div class="col-md-6">
+		<form method="post">
+			<div asp-validation-summary="All" class="text-danger"></div>
+			<div class="form-group">
+				<label asp-for="Username"></label>
+				<input asp-for="Username" class="form-control" disabled />
+			</div>
+			<div class="form-group">
+				<label asp-for="Input.Email"></label>
+				@if (Model.IsEmailConfirmed)
+			{
+				<div class="input-group">
+					<input asp-for="Input.Email" class="form-control" />
+					<span class="input-group-addon" aria-hidden="true"><span class="glyphicon glyphicon-ok text-success"></span></span>
+				</div>
+		}
+		else
+		{
+			<input asp-for="Input.Email" class="form-control" />
+			<button asp-page-handler="SendVerificationEmail" class="btn btn-link">Send verification email</button>
+	}
+				<span asp-validation-for="Input.Email" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Input.PhoneNumber"></label>
+				<input asp-for="Input.PhoneNumber" class="form-control" />
+				<span asp-validation-for="Input.PhoneNumber" class="text-danger"></span>
+			</div>
+			<button type="submit" style=" width: 100%; " class="btn btn-default">Save</button>
+		</form>
+		<div class="controls" style="font-size:25px;">
+			<div class="row">
+				<div class="col-md-6">
+					<button style=" width: 100%; " id="take-photo" class="btn btn-default">Capture</button>
+					<br />
+					<button style=" width: 100%; " id="delete-photo" class="btn btn-default">Delete</button>
+					<br />
+					<div style="font-size:1.5em; color:Tomato">
+						<a href="#" id="download-photo" download="selfie.png" title="Save Photo"
+						   class="disabled">
+							<i class="fas fa-download fa-sm btn btn-default">
+								Download
+							</i>
+						</a>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<a      style=" width: 100%; " class="btn btn-primary visible" href="#" id="start-camera">Restart Video.</a>
+					<br />
+					<button style=" width: 100%; " class="btn btn-primary" onclick="CaptureAndDetect(true, detectFaces, addPersonFace )">Add Face</button>
+					<br />
+					<button style=" width: 100%; " class="btn btn-primary" onclick="CaptureAndDetect(true, detectFaces, IdentifyFace  )"> Identify Face </button>
+					<br />
+					<button style=" width: 100%; " class="btn btn-primary" onclick=" trainGroupModel() "> Train Model </button>
+				</div>
+			</div>
+			<p id="error-message"></p>
+			<h4 style="color: red;" id="error_result"></h4>
+		</div>
+		<textarea id="responseTextArea" class="UIInput" style="width:100%; height:400px;"></textarea>
+	</div>
+	<div class="col-md-6">
+		<h3> User: <span>@Model.Input.Email</span>  </h3>
+		<h4> Person face ID: <span>@Model.faceID</span> </h4>
+		<h4  style="color: blue;"  id="text_results" >  </h4>
+		<video id="camera-stream"></video>
+		<canvas width="300" height="400"></canvas>
+		<img id="snap" />
+	</div>
 </div>
+<script>
+	var video,
+		image,
+		start_camera,
+		controls,
+		take_photo_btn,
+		delete_photo_btn,
+		download_photo_btn,
+		error_message,
+		hidden_canvas,
+		error_result,
+		snap;
+	var subscriptionKey = "{FACE API SUBSCRIPTION KEY}";
+
+	window.onload = function () {
+		// References to all the element we will need.
+		video = document.querySelector('#camera-stream');
+		image = document.querySelector('#snap');
+		start_camera = document.querySelector('#start-camera');
+		controls = document.querySelector('.controls');
+		take_photo_btn = document.querySelector('#take-photo');
+		delete_photo_btn = document.querySelector('#delete-photo');
+		download_photo_btn = document.querySelector('#download-photo');
+		error_message = document.querySelector('#error-message');
+		hidden_canvas = document.querySelector('canvas');
+		error_result = document.querySelector('#error_result');
+		snap = document.querySelector('#snap');
+		hidden_canvas.className = 'hidden';
+		// The getUserMedia interface is used for handling camera input.
+		// Some browsers need a prefix so here we're covering all the options
+		navigator.getMedia = (navigator.getUserMedia ||
+			navigator.webkitGetUserMedia ||
+			navigator.mozGetUserMedia ||
+			navigator.msGetUserMedia);
+		if (!navigator.getMedia) {
+			displayErrorMessage("Your browser doesn't have support for the navigator.getUserMedia interface.");
+		}
+		else {
+			// Request the camera.
+			navigator.getMedia(
+				{
+					video: { width: 1280, height: 720 }
+				},
+				// Success Callback
+				function (stream) {
+					// Create an object URL for the video stream and
+					// set it as src of our HTLM video element.
+					video.src = window.URL.createObjectURL(stream);
+					// Play the video element to start the stream.
+					video.play();
+					video.onplay = function () {
+						showVideo();
+					};
+				},
+				// Error Callback
+				function (err) {
+					displayErrorMessage("There was an error with accessing the camera stream: " + err.name, err);
+				}
+			);
+
+		}
+		// Mobile browsers cannot play video without user input,
+		// so here we're using a button to start it manually.
+		start_camera.addEventListener("click", function (e) {
+			hidden_canvas.className = 'hidden';
+			snap.className = 'hidden';
+			video.className = '';
+			e.preventDefault();
+
+			// Start video playback manually.
+			video.play();
+			showVideo();
+
+		});
+		take_photo_btn.addEventListener("click", function (e) {
+
+			e.preventDefault();
+
+			var snap = CaptureAndDetect(false);
+
+			// Show image.
+			//image.setAttribute('src', snap);
+			//image.classList.add("visible");
+
+			// Enable delete and save buttons
+			delete_photo_btn.classList.remove("disabled");
+			download_photo_btn.classList.remove("disabled");
+
+			// Set the href attribute of the download button to the snap url.
+			download_photo_btn.href = snap;
+
+			// Pause video playback of stream.
+			video.pause();
+
+		});
+		delete_photo_btn.addEventListener("click", function (e) {
+
+			e.preventDefault();
+
+			// Hide image.
+			image.setAttribute('src', "");
+			image.classList.remove("visible");
+
+			// Disable delete and save buttons
+			delete_photo_btn.classList.add("disabled");
+			download_photo_btn.classList.add("disabled");
+
+			// Resume playback of stream.
+			video.play();
+
+		});
+	}
+	function showVideo() {
+		// Display the video stream and the controls.
+
+		hideUI();
+		video.classList.add("visible");
+		controls.classList.add("visible");
+	}
+	function Uploadsubmit(datacaptured) { console.log("calling ", '@Url.Action("Capture", "Face")');  }
+	function displayErrorMessage(error_msg, error) {
+		error = error || "";
+		if (error) {
+			console.error(error);
+		}
+		error_message.innerText = error_msg;
+
+		hideUI();
+		error_message.classList.add("visible");
+	}
+	function hideUI() {
+		// Helper function for clearing the app UI.
+		//controls.classList.remove("visible");
+		start_camera.classList.remove("visible");
+		video.classList.remove("visible");
+		snap.classList.remove("visible");
+		error_message.classList.remove("visible");
+	};
+	function CaptureAndDetect(wantToDetect, execFunction, detectFunction ) {
+		var video = document.querySelector('#camera-stream'),
+			hidden_canvas = document.querySelector('canvas'),
+			context = hidden_canvas.getContext('2d'),
+			width = video.videoWidth,
+			height = video.videoHeight;
+
+		hidden_canvas.className = 'hidden';
+		snap.className = '';
+		video.className = 'hidden';
+
+		if (width && height) {
+			// Setup a canvas with the same dimensions as the video.
+			hidden_canvas.width = width;
+			hidden_canvas.height = height;
+			// Make a copy of the current frame in the video on the canvas.
+			context.drawImage(video, 0, 0, width, height)
+			// Storing Base64String
+			data = hidden_canvas.toDataURL('image/jpeg');
+			if (wantToDetect) {
+				//detectFaces(data);
+				//addPersonFace(data);
+				execFunction(data, detectFunction);
+			}
+			$("#snap").attr('src', data);
+		}
+	}
+	function detectFaces(data, detectFunction ) {
+		if (data) {
+			fetch(data)
+				.then(res => res.blob())
+				.then(blobData => {
+					$.post({
+						url: "https://southcentralus.api.cognitive.microsoft.com/face/v1.0/detect?returnFaceId=true&returnFaceLandmarks=false",
+						contentType: "application/octet-stream",
+						headers: {
+							'Ocp-Apim-Subscription-Key': subscriptionKey
+						},
+						processData: false,
+						//data: blobData
+						data: blobData
+					})
+					.done(function (data) {
+						var response = JSON.stringify(data);
+						console.log("detected face", data[0].faceId);
+						$("#responseTextArea").text(response);
+						if (response == "[]") {
+							error_result.innerHTML = "No Faces Detected, Try Again";
+						} else {
+							error_result.innerHTML = "";
+							//addPersonFace(blobData);
+							detectFunction(blobData, data[0].faceId );
+						}
+					})
+					.fail(function (err) {
+						$("#responseTextArea").append("\n\n---------FACE DETECTED SUCCESSFULLY----------\n\n");
+						$("#responseTextArea").text(JSON.stringify(err));
+						error_result.innerHTML = "Error Detecting faces";
+					})
+				});
+
+		}
+	}
+	function addPersonFace(blobData, faceID) {
+		var urlData = "https://southcentralus.api.cognitive.microsoft.com/face/v1.0/persongroups/grupo-monge/persons/@Model.faceID/persistedFaces";
+		console.log("image to detect", urlData, " Detected Face ID ", faceID);
+		$.post({
+			url: urlData,
+			contentType: "application/octet-stream",
+			headers: {
+				'Ocp-Apim-Subscription-Key': subscriptionKey
+			},
+			processData: false,
+			//data: blobData
+			data: blobData
+		}).done(function (data) {
+			$("#responseTextArea").append("\n\n---------ADD PERSON FACE SUCCESSFULL----------\n\n");
+			$("#responseTextArea").append(JSON.stringify(data));
+			$("#responseTextArea").append("\n\n-------------------\n\n");
+			}).fail(function (err) {
+			$("#responseTextArea").append("\n\n---------ADD PERSON FACE ERROR---------\n\n");
+			$("#responseTextArea").append(JSON.stringify(err));
+		});
+	}
+	function trainGroupModel() {
+		var urlData = "https://southcentralus.api.cognitive.microsoft.com/face/v1.0/persongroups/grupo-monge/train";
+		console.log("train Group Model", urlData);
+		$.post({
+			url: urlData,
+			contentType: "application/json",
+			headers: {
+				'Ocp-Apim-Subscription-Key': subscriptionKey
+			},
+			//processData: false,
+			//data: blobData
+			data: "{}",
+		}).done(function (data) {
+			$("#responseTextArea").append("\n\n---------TRAIN MODEL SUCCESSFULLY----------\n\n");
+			$("#responseTextArea").append(JSON.stringify(data));
+			$("#responseTextArea").append("\n\n-------------------\n\n");
+		}).fail(function (err) {
+			$("#responseTextArea").append("\n\n---------ADD PERSON FACE ERROR---------\n\n");
+			$("#responseTextArea").append(JSON.stringify(err));
+		});
+	}
+	function IdentifyFace(blobData, faceID) {
+		var urlData = "https://southcentralus.api.cognitive.microsoft.com/face/v1.0/identify";
+		var _data = '{"personGroupId":"grupo-monge", "faceIds":[ "' + faceID+'" ], "maxNumOfCandidatesReturned":1, "confidenceThreshold": 0.5  }';
+		console.log("image to detect", urlData, " Detected Face ID ", faceID, " DATA ", _data);
+
+		if (!faceID) {
+			displayErrorMessage( "Face ID NULL",null );
+			return;
+		 }
+
+		$.post({
+			url: urlData,
+			contentType: "application/json",
+			headers: {
+				'Ocp-Apim-Subscription-Key': subscriptionKey
+			},
+			processData: false,
+			//data: blobData
+			data: _data,
+		}).done(function (data) {
+			$("#responseTextArea").append("\n\n---------PERSON FACE IDENTIFICATION SUCCESSFULL----------\n\n");
+			$("#responseTextArea").append(JSON.stringify(data));
+			$("#responseTextArea").append("\n\n-------------------\n\n");
+			getIdentifyUser( data[0].candidates[0] );
+		}).fail(function (err) {
+			$("#responseTextArea").append("\n\n---------ADD PERSON FACE ERROR---------\n\n");
+			$("#responseTextArea").append(JSON.stringify(err));
+		});
+	}
+	function getIdentifyUser(candidate) {
+		var candidateID = candidate.personId;
+		console.log(candidate.personId);
+		$("#text_results").html("Recognized User ID: " + candidateID);
+
+		var urlData = "https://southcentralus.api.cognitive.microsoft.com/face/v1.0/persongroups/grupo-monge/persons/" + candidateID;
+
+		$.get({
+			url: urlData,
+			contentType: "application/json",
+			headers: {
+				'Ocp-Apim-Subscription-Key': subscriptionKey
+			},
+			processData: false,
+			//data: blobData
+			//data: _data,
+		}).done(function (data) {
+			$("#responseTextArea").append("\n\n---------PERSON GET FACE SUCCESSFULL----------\n\n");
+			$("#responseTextArea").append(JSON.stringify(data));
+			$("#responseTextArea").append("\n\n-------------------\n\n");
+
+			$("#text_results").html("Recognized User ID: " + data.personId + " <br/><br/>Email: " + data.name +" <br/><br/>Password: "+data.userData);
+
+		}).fail(function (err) {
+			$("#responseTextArea").append("\n\n---------ADD PERSON FACE ERROR---------\n\n");
+			$("#responseTextArea").append(JSON.stringify(err));
+		});
+	}
+</script>
+
 
 @section Scripts {
-    @await Html.PartialAsync("_ValidationScriptsPartial")
+	@await Html.PartialAsync("_ValidationScriptsPartial")
 }

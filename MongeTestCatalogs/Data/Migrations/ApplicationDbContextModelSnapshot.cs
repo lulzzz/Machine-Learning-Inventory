@@ -166,6 +166,8 @@ namespace MongeTestCatalogs.Data.Migrations
                     b.Property<string>("UserName")
                         .HasMaxLength(256);
 
+                    b.Property<string>("faceID");
+
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")

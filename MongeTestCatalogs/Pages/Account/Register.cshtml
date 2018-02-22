@@ -7,31 +7,126 @@
 <h2>@ViewData["Title"]</h2>
 
 <div class="row">
-    <div class="col-md-4">
-        <form asp-route-returnUrl="@Model.ReturnUrl" method="post">
-            <h4>Create a new account.</h4>
-            <hr />
-            <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="Input.Email"></label>
-                <input asp-for="Input.Email" class="form-control" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.Password"></label>
-                <input asp-for="Input.Password" class="form-control" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Input.ConfirmPassword"></label>
-                <input asp-for="Input.ConfirmPassword" class="form-control" />
-                <span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
-            </div>
-            <button type="submit" class="btn btn-default">Register</button>
-        </form>
-    </div>
+	<div class="col-md-4">
+		<form asp-route-returnUrl="@Model.ReturnUrl" method="post">
+			<h4>Create a new account.</h4>
+			<hr />
+			<div asp-validation-summary="All" class="text-danger"></div>
+			<div class="form-group">
+				<label asp-for="Input.Email"></label>
+				<input asp-for="Input.Email" class="form-control" id="email_input" />
+				<span asp-validation-for="Input.Email" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Input.Password"></label>
+				<input asp-for="Input.Password" class="form-control" id="password_input" />
+				<span asp-validation-for="Input.Password" class="text-danger"></span>
+			</div>
+			<div class="form-group">
+				<label asp-for="Input.ConfirmPassword"></label>
+				<input asp-for="Input.ConfirmPassword" class="form-control" />
+				<span asp-validation-for="Input.ConfirmPassword" class="text-danger"></span>
+			</div>
+
+			<div class="form-group">
+				<label asp-for="Input.FaceID"></label>
+				<input asp-for="Input.FaceID" class="form-control" id="faceID_input" />
+				<span asp-validation-for="Input.FaceID" class="text-danger"></span>
+			</div>
+
+
+			<button type="submit" class="btn btn-default" id="submit_btn">Register</button>
+
+			
+		</form>
+
+		<br />
+		<button class="btn btn-primary" onclick="createPerson();">Generate Face ID</button>
+	</div>
+
+	
+
+
 </div>
+
+
+<script>
+	var subscriptionKey = "{FACE API SUBSCRIPTION KEY}";
+
+	function createPerson() {
+		// Request parameters.
+		var uriBase = "https://southcentralus.api.cognitive.microsoft.com/face/v1.0/persongroups/grupo-monge/persons";
+		
+		var email_input = $("#email_input").val();
+		var password_input = $("#password_input").val();
+		var faceID_input = $("#faceID_input");
+		var _data = '{"name": "' + email_input + '","userData": "' + password_input + '"}'; 
+		console.log("data", _data);
+		
+		// Perform the REST API call.
+		$.ajax({
+			url: uriBase,
+			// Request headers.
+			beforeSend: function (xhrObj) {
+				xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
+			},
+			type: "POST",
+			// Request body.
+			data: _data,
+			contentType: "application/json",
+			success: function (data) { faceID_input.val(data["personId"]); $("#submit_btn").trigger('click'); },
+			error: function () { }
+		}).done(function (data) {
+				// Show formatted JSON on webpage.
+				$("#responseTextArea").val(JSON.stringify(data, null, 2));
+			})
+	}
+
+	function callBackendFaceListCreate() {
+		var username_input = $('#face_api_username').val();
+		var password_input = $('#face_api_password').val();
+		var err = $('#error_result');
+
+		if (!username_input || !password_input ) {
+			err.html("Inputs Can't be blank");
+			return;
+		} else {
+			err.html("");
+		}
+
+		var dataVal = {
+			handler: 'RegFace',
+			username: username_input,
+			password: password_input
+		};
+		console.log("callBackendFaceListCreate");
+		$.ajax({
+			url: '@Url.Action("Register")',
+			type: "GET",
+			data: dataVal,
+			//contentType: "application/json; charset=utf-8",
+			beforeSend: function (xhr) {
+				xhr.setRequestHeader("XSRF-TOKEN",
+					$('input:hidden[name="__RequestVerificationToken"]').val());
+			},
+			//dataType: "json",
+			success: function (data) {
+				console.log('callBackendFaceListCreate 1 SUCCESS ', data);
+				$("#responseTextArea").val(JSON.stringify(data, null, 2));
+			},
+			error: function (xhr, status, errorThrown) {
+				var err = "Status: " + status + " " + errorThrown;
+				console.log('AJAX 2 ERROR ', err, '@Url.Action("MakeFaceAPIRequest")');
+			}
+		}).done(function (data) {
+			console.log('callBackendFaceListCreate DONE ', data);
+		});
+	}
+</script>
+
+
 
 @section Scripts {
     @await Html.PartialAsync("_ValidationScriptsPartial")
 }
+

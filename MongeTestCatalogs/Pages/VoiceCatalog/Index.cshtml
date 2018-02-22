@@ -76,6 +76,7 @@
 	var speechRecognizer = new webkitSpeechRecognition();
 	var startBtn = document.getElementById("SpeakButton");
 	var request = "";
+	var subscriptionKey = "{LUIS API SUBSCRIPTION KEY}";
 
 	function SpeakButton_Click() {
 		r.innerHTML = "Starting...";
@@ -145,7 +146,7 @@
 			url: "https://westus.api.cognitive.microsoft.com/luis/v2.0/apps/b0a9eb4e-2381-4de5-9778-e6e0b8b5b6fc?q=" + request + $.param(params),
 			beforeSend: function (xhrObj) {
 				// Request headers
-				xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", "API_KEY");
+				xhrObj.setRequestHeader("Ocp-Apim-Subscription-Key", subscriptionKey);
 			},
 			type: "GET",
 			// The request body may be empty for a GET request

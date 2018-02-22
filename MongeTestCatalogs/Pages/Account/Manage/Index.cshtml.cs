@@ -28,7 +28,13 @@ namespace MongeTestCatalogs.Pages.Account.Manage
             _emailSender = emailSender;
         }
 
+        [BindProperty]
         public string Username { get; set; }
+
+        [BindProperty]
+        public string faceID { get; set; }
+
+        public string password { get; set; }
 
         public bool IsEmailConfirmed { get; set; }
 
@@ -47,6 +53,8 @@ namespace MongeTestCatalogs.Pages.Account.Manage
             [Phone]
             [Display(Name = "Phone number")]
             public string PhoneNumber { get; set; }
+
+            
         }
 
         public async Task<IActionResult> OnGetAsync()
@@ -58,11 +66,12 @@ namespace MongeTestCatalogs.Pages.Account.Manage
             }
 
             Username = user.UserName;
+            faceID = user.faceID;
 
             Input = new InputModel
             {
                 Email = user.Email,
-                PhoneNumber = user.PhoneNumber
+                PhoneNumber = user.PhoneNumber,
             };
 
             IsEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);

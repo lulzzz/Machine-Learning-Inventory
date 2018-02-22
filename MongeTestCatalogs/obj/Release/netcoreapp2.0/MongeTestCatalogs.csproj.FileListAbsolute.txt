@@ -1,0 +1,13 @@
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\bin\Release\netcoreapp2.0\app.db
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\bin\Release\netcoreapp2.0\MongeTestCatalogs.deps.json
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\bin\Release\netcoreapp2.0\MongeTestCatalogs.runtimeconfig.json
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\bin\Release\netcoreapp2.0\MongeTestCatalogs.runtimeconfig.dev.json
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\bin\Release\netcoreapp2.0\MongeTestCatalogs.dll
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\bin\Release\netcoreapp2.0\MongeTestCatalogs.pdb
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\MongeTestCatalogs.csprojResolveAssemblyReference.cache
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\MongeTestCatalogs.csproj.CoreCompileInputs.cache
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\UserSecretsAssemblyInfo.cs
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\MongeTestCatalogs.AssemblyInfoInputs.cache
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\MongeTestCatalogs.AssemblyInfo.cs
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\MongeTestCatalogs.dll
+C:\Users\ruben\Documents\GitHub\Machine-Learning-Inventory\MongeTestCatalogs\obj\Release\netcoreapp2.0\MongeTestCatalogs.pdb
